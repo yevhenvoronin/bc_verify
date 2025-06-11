@@ -8,21 +8,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script
       type="text/javascript"
-      src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js"
+      src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js"
     ></script>
     <link
       rel="stylesheet"
       type="text/css"
-      href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css"
     />
     <link
       rel="stylesheet"
       type="text/css"
-      href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
     />
     <script
       type="text/javascript"
-      src="//cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js"
+      src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js"
     ></script>
 
     <style>
@@ -131,6 +131,11 @@
       .is-under-median {
         color: #bf4a67;
       }
+      .is-over-moon {
+        color: chocolate;
+        font-size: larger;
+        font-weight: bold;
+      }
     </style>
   </head>
 
@@ -218,7 +223,25 @@
               max="100000"
               step="1"
               placeholder="Amount of games"
-              value="10"
+              value="2500"
+            />
+            <span class="icon is-small is-left"
+              ><i class="fa fa-hashtag"></i
+            ></span>
+          </p>
+        </div>
+        <div class="field">
+          <label class="label">Exception Combo</label>
+          <p class="control has-icons-left">
+            <input
+              class="input"
+              type="number"
+              id="exception_combo_input"
+              min="1"
+              max="100"
+              step="1"
+              placeholder="Exception Combo"
+              value="30"
             />
             <span class="icon is-small is-left"
               ><i class="fa fa-hashtag"></i
@@ -241,6 +264,8 @@
             <tr>
               <th><b>Game's hash</b></th>
               <th><b>Bust</b></th>
+              <th><b>Combo</b></th>
+              <th><b>Exception</b></th>
             </tr>
           </thead>
           <tbody id="game_verify_table"></tbody>
@@ -250,7 +275,18 @@
     <script type="text/javascript">
       var isVerifying = false;
       var r = 1;
+      let exception_bust = 30;
+      let last_moon_index = 0;
+      let last_exception_index = 0;
+      let moon_index = 0;
+
+
       $("#game_verify_submit").on("click", () => {
+        exception_bust = $("#exception_combo_input").val();
+        last_moon_index = 0;
+        last_exception_index = 0;
+        moon_index = 0;
+        console.log(exception_bust)  
         if (isVerifying) return;
         isVerifying = true;
         $("#game_hash_input").parent().addClass("is-loading");
@@ -295,25 +331,40 @@
           }
         }
       });
+
       const addTableRow = (hash, bust, index) => {
-        $("<tr/>")
-          .attr({
-            class: index === 0 ? "is-first" : null,
-          })
-          .append($("<td/>").text(hash))
-          .append(
-            $("<td/>")
-              .text(bust)
-              .attr({
-                class:
-                  bust === 1.98
-                    ? "is-at-median"
-                    : bust > 1.98
-                    ? "is-over-median"
-                    : "is-under-median",
-              })
-          )
-          .appendToWithIndex($("#game_verify_table"), index);
+        if (bust >= 10) {
+          combo = index-last_moon_index;
+          last_moon_index = index;
+          let exception_combo = 0;
+          if (combo > exception_bust) {
+            exception_combo = index - last_exception_index
+            last_exception_index = index;
+            $("<tr/>")
+            .attr({
+              class: index === 0 ? "is-first" : null,
+            })
+            .append($("<td/>").text(hash))
+            .append(
+              $("<td/>")
+                .text(bust)
+                .attr({
+                  class: "is-over-median"
+                })
+            )
+            .append(
+              $("<td/>").text(combo).attr(
+                {class: "is-over-moon"}
+              )
+            )
+            .append(
+              $("<td/>").text(exception_combo ? exception_combo : "")
+            )
+            .appendToWithIndex($("#game_verify_table"), moon_index);
+            moon_index++;
+          }
+          
+        }
         if (index >= $("#game_amount_input").val() - 1) {
           $("#game_hash_input").parent().removeClass("is-loading");
           $("#game_verify_submit").removeClass("is-loading");
